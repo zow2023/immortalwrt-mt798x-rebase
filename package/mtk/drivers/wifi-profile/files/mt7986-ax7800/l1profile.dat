@@ -14,6 +14,7 @@ INDEX0_mesh_ifname=mesh;meshx
 INDEX0_nvram_zone=dev1;dev2
 INDEX0_single_sku_path=/etc/wireless/mediatek/mt7986-sku.dat
 INDEX0_bf_sku_path=/etc/wireless/mediatek/mt7986-sku-bf.dat
+INDEX0_band=none;5g
 INDEX1=MT7916
 INDEX1_profile_path=/etc/wireless/mediatek/mt7916-ax7800.dbdc.b0.dat;/etc/wireless/mediatek/mt7916-ax7800.dbdc.b1.dat
 INDEX1_init_script=/lib/wifi/mtwifi.lua;/lib/wifi/mtwifi.lua
