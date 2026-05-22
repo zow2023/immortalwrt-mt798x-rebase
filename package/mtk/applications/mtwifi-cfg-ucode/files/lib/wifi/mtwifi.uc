@@ -78,6 +78,9 @@ for (let devname in all_devnames) {
     if (!band || band == "nil") {
         band = (subidx == 1) ? "2g" : "5g";
     }
+    if (band == "none") {
+    continue;
+    } 
 
     let dbdc_main = (subidx == 1) ? 1 : 0;
     let defs = get_band_defaults(band);
