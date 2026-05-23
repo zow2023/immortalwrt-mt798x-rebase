@@ -16,7 +16,7 @@ extract_mtwifi_eeprom() {
 			of=/lib/firmware/MT7916_ePAeLNA_EEPROM_AX7800.bin \
 			bs=1 skip=$((0xA0000)) count=$((0x1000)) 2>/dev/null
 		# W6 hardware is ePAeLNA, but EEPROM type byte (0x191=0x64)
-		# causes driver to select iPAiLNA bin.
+		# causes MT7986 driver to select iPAiLNA bin.
 		# Override with ePAeLNA template to ensure correct calibration.
 		cp /lib/firmware/MT7986_ePAeLNA_EEPROM_AX7800.bin \
 			/lib/firmware/MT7986_iPAiLNA_EEPROM_AX7800.bin
