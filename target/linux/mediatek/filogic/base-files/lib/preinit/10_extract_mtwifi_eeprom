@@ -1,0 +1,24 @@
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+extract_mtwifi_eeprom() {
+	case $(board_name) in
+	acer,predator-w6)
+		local factory
+		factory=$(find_mmc_part factory)
+		[ -n "$factory" ] || return
+		# MT7986 (5G): factory offset 0x0, size 0x1000
+		[ -f /lib/firmware/MT7986_ePAeLNA_EEPROM_AX7800.bin ] || \
+			dd if="$factory" \
+				of=/lib/firmware/MT7986_ePAeLNA_EEPROM_AX7800.bin \
+				bs=1 skip=0 count=$((0x1000)) 2>/dev/null
+		# MT7916 (2.4G/6G): factory offset 0xA0000, size 0x1000
+		[ -f /lib/firmware/MT7916_ePAeLNA_EEPROM_AX7800.bin ] || \
+			dd if="$factory" \
+				of=/lib/firmware/MT7916_ePAeLNA_EEPROM_AX7800.bin \
+				bs=1 skip=$((0xA0000)) count=$((0x1000)) 2>/dev/null
+		;;
+	esac
+}
+
+boot_hook_add preinit_main extract_mtwifi_eeprom
