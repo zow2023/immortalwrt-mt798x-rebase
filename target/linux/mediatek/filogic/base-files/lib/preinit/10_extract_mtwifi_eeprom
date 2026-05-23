@@ -8,15 +8,18 @@ extract_mtwifi_eeprom() {
 		factory=$(find_mmc_part factory)
 		[ -n "$factory" ] || return
 		# MT7986 (5G): factory offset 0x0, size 0x1000
-		[ -f /lib/firmware/MT7986_ePAeLNA_EEPROM_AX7800.bin ] || \
-			dd if="$factory" \
-				of=/lib/firmware/MT7986_ePAeLNA_EEPROM_AX7800.bin \
-				bs=1 skip=0 count=$((0x1000)) 2>/dev/null
+		dd if="$factory" \
+			of=/lib/firmware/MT7986_ePAeLNA_EEPROM_AX7800.bin \
+			bs=1 skip=0 count=$((0x1000)) 2>/dev/null
 		# MT7916 (2.4G/6G): factory offset 0xA0000, size 0x1000
-		[ -f /lib/firmware/MT7916_ePAeLNA_EEPROM_AX7800.bin ] || \
-			dd if="$factory" \
-				of=/lib/firmware/MT7916_ePAeLNA_EEPROM_AX7800.bin \
-				bs=1 skip=$((0xA0000)) count=$((0x1000)) 2>/dev/null
+		dd if="$factory" \
+			of=/lib/firmware/MT7916_ePAeLNA_EEPROM_AX7800.bin \
+			bs=1 skip=$((0xA0000)) count=$((0x1000)) 2>/dev/null
+		# W6 hardware is ePAeLNA, but EEPROM type byte (0x191=0x64)
+		# causes driver to select iPAiLNA bin.
+		# Override with ePAeLNA template to ensure correct calibration.
+		cp /lib/firmware/MT7986_ePAeLNA_EEPROM_AX7800.bin \
+			/lib/firmware/MT7986_iPAiLNA_EEPROM_AX7800.bin
 		;;
 	esac
 }
