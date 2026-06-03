@@ -98,10 +98,9 @@ CarrierDetect=0
 CCKTxStream=4
 Channel=0
 ChannelGrp=
-# 中国地区代码及信道规范
-CountryCode=CN
-CountryRegion=1
-CountryRegionABand=0
+CountryCode=US
+CountryRegion=5
+CountryRegionABand=7
 CP_SUPPORT=2
 CSPeriod=6
 DBDC_MODE=1
@@ -110,7 +109,7 @@ DefaultKeyID=1
 DfsCalibration=0
 # 中国5G频段（5.15-5.35GHz / 5.725-5.85GHz）无需DFS，保持关闭
 DfsDedicatedZeroWait=0
-DfsEnable=0
+DfsEnable=1
 DfsFalseAlarmPrevent=1
 DfsZeroWait=0
 DfsZeroWaitCacTime=255
