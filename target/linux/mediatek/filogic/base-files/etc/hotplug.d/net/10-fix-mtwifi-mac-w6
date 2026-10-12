@@ -1,0 +1,76 @@
+#!/bin/sh
+# Acer Predator W6 (MT7986 + MT7916) MAC assignment hotplug.
+# Split out of 09-fix-mtwifi-mac so upstream core edits and this device
+# patch never collide.
+#
+# Double-trigger notes:
+#   - W6 uses independent 2gMAC / 5gMAC / 6gMAC fw_printenv values; the
+#     helper writes both the per-radio .dat files and the merged
+#     DBDC_card1.dat, then bounces rai0/ray0 so the MT7916 driver picks
+#     up the new addresses.
+#   - The bounce fires netifd `add` events on rai0/ray0 and (rarely) ra0,
+#     which used to re-enter the dispatcher and rewrite identical macs.
+#   - Guarded below in two ways: only fire on ra0 to keep the run scope
+#     narrow, AND a board-scoped once flag prevents re-entry across the
+#     same boot.
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+[ "$(board_name)" = "acer,predator-w6" ] || exit 0
+# Only the MT7986 DBDC init interface — rax0 is its sibling 5G.
+[ "${ACTION}" = "add" ] || exit 0
+[ "${INTERFACE}" = "ra0" ] || exit 0
+
+FLAG="/tmp/.fixmac-w6.$(board_name)"
+mkdir -p /tmp
+# One run per boot keeps the bounce idempotent.
+[ -e "$FLAG" ] && {
+    logger -t fixmac-w6 "skip: already dispatched this boot"
+    exit 0
+}
+touch "$FLAG"
+
+force_set_mac_to_dat()
+{
+    local dat="$1"
+    local mac="$2"
+    local field="${3:-MacAddress}"
+    [ -f "$dat" ] || return
+    [ -n "$mac" ] || return
+    chmod 644 "$dat"
+    sed -i '/^'"$field"'=/d' "$dat"
+    echo "$field=$mac" >> "$dat"
+}
+
+mac_2g="$(fw_printenv -n 2gMAC)"
+mac_5g="$(fw_printenv -n 5gMAC)"
+mac_6g="$(fw_printenv -n 6gMAC)"
+# ra0 is the MT7986 DBDC init interface; LAA bit avoids colliding with
+# MT7916 b0 while both radios are up.
+mac_boot="$(macaddr_setbit_la "$mac_2g")"
+
+logger -t fixmac-w6 "apply 2g=$mac_2g 5g=$mac_5g 6g=$mac_6g"
+
+force_set_mac_to_dat \
+    "/etc/wireless/mediatek/mt7986-ax7800.dbdc.b0.dat" \
+    "$mac_boot"
+force_set_mac_to_dat \
+    "/etc/wireless/mediatek/mt7986-ax7800.dbdc.b1.dat" \
+    "$mac_5g"
+force_set_mac_to_dat \
+    "/etc/wireless/mediatek/mt7916-ax7800.dbdc.b0.dat" \
+    "$mac_2g"
+force_set_mac_to_dat \
+    "/etc/wireless/mediatek/mt7916-ax7800.dbdc.b1.dat" \
+    "$mac_6g"
+
+dbdc1="/etc/wireless/mediatek/DBDC_card1.dat"
+force_set_mac_to_dat "$dbdc1" "$mac_2g" "MacAddress"
+force_set_mac_to_dat "$dbdc1" "$mac_6g" "MacAddress1"
+
+# Bounce MT7916 so the driver re-reads MAC from the merged dat file.
+ifconfig rai0 down
+ifconfig ray0 down
+ifconfig rai0 up
+ifconfig ray0 up
