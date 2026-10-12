@@ -3,18 +3,6 @@
 . /lib/functions.sh
 . /lib/functions/system.sh
 
-force_set_mac_to_dat()
-{
-    local dat="$1"
-    local mac="$2"
-    local field="${3:-MacAddress}"
-    [ -f "$dat" ] || return
-    [ -n "$mac" ] || return
-    chmod 644 "$dat"
-    sed -i '/^'"$field"'=/d' "$dat"
-    echo "$field=$mac" >> "$dat"
-}
-
 set_macs_to_dat()
 {
     local b0_mac="$1"
@@ -44,44 +32,14 @@ set_macs_to_dat()
 mtwifi_set_macs()
 {
     case $(board_name) in
-    acer,predator-w6)
-        local mac_2g mac_5g mac_6g mac_boot
-        mac_2g="$(fw_printenv -n 2gMAC)"
-        mac_5g="$(fw_printenv -n 5gMAC)"
-        mac_6g="$(fw_printenv -n 6gMAC)"
-        # ra0 是 MT7986 DBDC 初始化接口，用 LAA 地址避免冲突
-        mac_boot="$(macaddr_setbit_la "$mac_2g")"
-        # 写入原始 dat 文件（驱动合并前的源文件）
-        force_set_mac_to_dat \
-            "/etc/wireless/mediatek/mt7986-ax7800.dbdc.b0.dat" \
-            "$mac_boot"
-        force_set_mac_to_dat \
-            "/etc/wireless/mediatek/mt7986-ax7800.dbdc.b1.dat" \
-            "$mac_5g"
-        force_set_mac_to_dat \
-            "/etc/wireless/mediatek/mt7916-ax7800.dbdc.b0.dat" \
-            "$mac_2g"
-        force_set_mac_to_dat \
-            "/etc/wireless/mediatek/mt7916-ax7800.dbdc.b1.dat" \
-            "$mac_6g"
-        # 同时写入驱动合并文件 DBDC_card1.dat（MT7916）
-        local dbdc1="/etc/wireless/mediatek/DBDC_card1.dat"
-        force_set_mac_to_dat "$dbdc1" "$mac_2g" "MacAddress"
-        force_set_mac_to_dat "$dbdc1" "$mac_6g" "MacAddress1"
-        # bounce MT7916 让驱动重新读取 MAC
-        ifconfig rai0 down
-        ifconfig ray0 down
-        ifconfig rai0 up
-        ifconfig ray0 up
-        ;;
-    acer,predator-w6x-stock|\
-    acer,predator-w6x-ubootmod)
-        local base_mac="$(mtd_get_mac_ascii u-boot-env ethaddr)"
+	acer,predator-w6x-stock|\
+	acer,predator-w6x-ubootmod)
+		local base_mac="$(mtd_get_mac_ascii u-boot-env ethaddr)"
         local b0_mac="$(macaddr_add $base_mac 2)"
         local b1_mac="$(macaddr_add $base_mac 3)"
 
         set_macs_to_dat "$b0_mac" "$b1_mac"
-        ;;
+		;;
     clx,s20l|\
     clx,s20p)
         local b0_mac="$(mmc_get_mac_binary factory 0x4)"
@@ -129,7 +87,7 @@ mtwifi_set_macs()
         local base_mac="$(mtd_get_mac_ascii product_info ethaddr)"
         local b0_mac="$(macaddr_add $base_mac 2)"
         local b1_mac="$(macaddr_add $base_mac 3)"
-
+        
         set_macs_to_dat "$b0_mac" "$b1_mac"
         ;;
     ruijie,rg-x60-new-ubi)
@@ -137,16 +95,12 @@ mtwifi_set_macs()
         local base_mac="$(strings $voldev | grep "^ethaddr=" | cut -d'=' -f2)"
         local b0_mac="$(macaddr_add $base_mac 2)"
         local b1_mac="$(macaddr_add $base_mac 3)"
-
+        
         set_macs_to_dat "$b0_mac" "$b1_mac"
         ;;
     esac
 }
 
-[ "${ACTION}" = "add" ] && {
-    case "${INTERFACE}" in
-        ra0|rax0)
-            mtwifi_set_macs
-            ;;
-    esac
+[ "${ACTION}" = "add" ] && [ "${INTERFACE%%[0-9]}" = "ra" ] &&  {
+    mtwifi_set_macs
 }
