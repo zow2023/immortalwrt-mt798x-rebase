@@ -1,0 +1,21 @@
+#!/bin/sh
+# board.d / uci-defaults hook that runs once after first boot
+# on Acer Predator W6. Stage 1: clear the run-once flag written by the
+# hotplug script so a fresh boot re-applies MAC overrides; without this
+# the /tmp flag could survive a reboot only into an "already dispatched"
+# state on cold start, leading to MACs sticking to whatever burned-in
+# value came up with the wifi firmware.
+. /lib/functions.sh
+
+[ "$(board_name)" = "acer,predator-w6" ] || exit 0
+
+# Make sure the official wireless profile names point at the right DATs.
+uci -q batch <<-'EOF'
+	set wireless.default_radio0.path='mt7986-ax7800.dbdc.b0'
+	set wireless.default_radio1.path='mt7986-ax7800.dbdc.b1'
+	set wireless.default_radio2.path='mt7916-ax7800.dbdc.b0'
+	set wireless.default_radio3.path='mt7916-ax7800.dbdc.b1'
+EOF
+uci commit wireless
+
+exit 0
