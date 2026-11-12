@@ -566,8 +566,19 @@ gen_vifs_to_rps_if()
 
 get_eth_if_name()
 {
-	ethif1="eth0"
-	ethif2="eth1"
+	local dev
+
+	ethif1=""
+	ethif2=""
+	# GMAC interfaces may have board-specific names.
+	for dev in /sys/class/net/*; do
+		grep -q "mediatek,eth-mac" "$dev/of_node/compatible" 2>/dev/null || continue
+		if [ -z "$ethif1" ]; then
+			ethif1="${dev##*/}"
+		elif [ -z "$ethif2" ]; then
+			ethif2="${dev##*/}"
+		fi
+	done
 	dbg2 "# Ethernet interface list"
 	dbg2 "\$ethif1=$ethif1\n\$ethif2=$ethif2"
 	RPS_IF_LIST="$RPS_IF_LIST $ethif1 $ethif2"
@@ -627,9 +638,9 @@ get_wifi_if_name()
 		# idx = 1 : main(physical) interface of 1st Wi-Fi band
 		# idx > 1 : virtual interface of other Wi-Fi band
 		# idx = "": Wi-Fi interface does not exist in l1profile
-		wifi1_dbdc_idx=`l1dat if2dbdcidx $wifi1`
-		wifi2_dbdc_idx=`l1dat if2dbdcidx $wifi2`
-		wifi3_dbdc_idx=`l1dat if2dbdcidx $wifi3`
+		[ -n "$wifi1" ] && wifi1_dbdc_idx=`l1dat if2dbdcidx "$wifi1"`
+		[ -n "$wifi2" ] && wifi2_dbdc_idx=`l1dat if2dbdcidx "$wifi2"`
+		[ -n "$wifi3" ] && wifi3_dbdc_idx=`l1dat if2dbdcidx "$wifi3"`
 	fi
 
 	dbg2 "# Wi-Fi interface list"
