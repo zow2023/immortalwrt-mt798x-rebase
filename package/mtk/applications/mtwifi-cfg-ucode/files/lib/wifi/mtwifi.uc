@@ -97,7 +97,7 @@ for (let devname in all_devnames) {
         "channel": "auto",
         "txpower": 100,
         "htmode": defs.htmode,
-        "country": "CN",
+        "country": "US",
         "mu_beamformer": 1,
         "noscan": defs.htbsscoex,
         "serialize": 1
